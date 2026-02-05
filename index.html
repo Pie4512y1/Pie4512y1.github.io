@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Education Resource | Study Portal</title>
+    <style>
+        /* --- STEALTH CSS: THE "STUDY" LOOK --- */
+        body { margin: 0; font-family: 'Times New Roman', serif; background: #f4f4f4; color: #333; overflow-x: hidden; }
+        #study-site { padding: 40px; max-width: 800px; margin: auto; background: white; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; border-bottom: 2px solid #2c3e50; font-size: 2.5em; }
+        .section { margin-bottom: 30px; line-height: 1.6; }
+        .secret-link { color: inherit; text-decoration: none; cursor: text; border-bottom: 1px transparent; }
+        
+        /* --- GAME CSS: THE "OBBY" LOOK --- */
+        #game-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #87CEEB; z-index: 9999; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 10000; font-family: 'Segoe UI', sans-serif; }
+        #fullscreen-btn { 
+            position: absolute; bottom: 20px; right: 20px; 
+            padding: 10px 20px; background: rgba(0,0,0,0.6); color: white; 
+            border: 2px solid white; border-radius: 5px; cursor: pointer; pointer-events: auto; z-index: 10001;
+        }
+    </style>
+</head>
+<body>
+
+<div id="study-site">
+    <h1>Advanced Calculus & Linear Algebra</h1>
+    <div class="section">
+        <h3>1.1 Understanding Limits</h3>
+        <p>In mathematics, a limit is the value that a function "approaches" as the input approaches some value. Limits are essential to calculus and mathematical analysis, and are used to define continuity, derivatives, and integrals.</p>
+    </div>
+
+    <div class="section">
+        <h3>1.2 Fundamental <a href="#" class="secret-link" onclick="unlockObby(event)">Equations</a></h3>
+        <p>The concept of the derivative is at the core of Calculus. When we look at various complex algebraic structures, we must maintain the integrity of the variables involved in the process.</p>
+    </div>
+    <p style="color: #999; font-size: 0.8em;">&copy; 2026 Global Edu-Tech Systems. Internal Use Only.</p>
+</div>
+
+<div id="game-container">
+    <div id="ui">
+        <div style="font-size: 28px; font-weight: bold;">Stage: <span id="stageNum">1</span> / 30</div>
+        <div>WASD: Move | SPACE: Jump | MOUSE: Rotate View | ESC: Panic Key</div>
+    </div>
+    <button id="fullscreen-btn">FULL SCREEN</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script>
+    let scene, camera, renderer, player, legL, legR, armL, armR;
+    const platforms = [], lava = [], keys = {};
+    let velY = 0, yaw = 0, currentLevel = 1;
+    let checkpointPos = new THREE.Vector3(0, 5, 0);
+
+    function unlockObby(e) {
+        e.preventDefault();
+        document.getElementById('study-site').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        initEngine();
+    }
+
+    // --- PANIC KEY: Press 'Escape' to hide instantly ---
+    window.addEventListener('keydown', e => {
+        if(e.key === 'Escape') {
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('study-site').style.display = 'block';
+            document.exitPointerLock();
+        }
+    });
+
+    function initEngine() {
+        if (renderer) return; // Prevent double init
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 150);
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('game-container').appendChild(renderer.domElement);
+
+        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
+
+        // Create Player
+        player = new THREE.Group();
+        const matShirt = new THREE.MeshStandardMaterial({ color: 0x00a2ff });
+        const matSkin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+        const matPants = new THREE.MeshStandardMaterial({ color: 0x333333 });
+
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), matSkin);
+        head.position.y = 1.3;
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.5), matShirt);
+        torso.position.y = 0.4;
+        armL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), matSkin);
+        armL.position.set(-0.7, 0.4, 0);
+        armR = armL.clone(); armR.position.x = 0.7;
+        legL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.2, 0.45), matPants);
+        legL.position.set(-0.25, -0.8, 0);
+        legR = legL.clone(); legR.position.x = 0.25;
+
+        player.add(head, torso, armL, armR, legL, legR);
+        player.position.set(0, 5, 0);
+        scene.add(player);
+
+        // Generate 30 Levels
+        for (let i = 0; i < 30; i++) {
+            let z = i * 40;
+            addProp(0, 0, z, 10, 0.8, 10, 0x22ff22, false, true, i+1); // Checkpoint
+            for(let j=1; j<=4; j++) {
+                let oz = z + (j * 8);
+                let type = i % 3;
+                if(type==0) addProp(Math.sin(j)*3, j*0.5, oz, 4, 0.5, 4, 0xffffff);
+                if(type==1) { addProp(0,0,oz,12,0.5,2,0xff0000,true); addProp(0,-0.2,oz,1,0.5,8,0x888888); }
+                if(type==2) addProp(0, j, oz, 3, 0.5, 3, 0xdddddd);
+            }
+        }
+
+        // Setup Events
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+        window.addEventListener('mousemove', e => {
+            if(document.pointerLockElement) yaw -= e.movementX * 0.003;
+        });
+        renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        });
+
+        animate();
+    }
+
+    function addProp(x, y, z, w, h, d, color, kill=false, check=false, levelNum=0) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({color}));
+        mesh.position.set(x, y, z);
+        mesh.castShadow = mesh.receiveShadow = true;
+        scene.add(mesh);
+        if(kill) lava.push(mesh); else platforms.push({mesh, check, levelNum});
+    }
+
+    function animate() {
+        if(document.getElementById('game-container').style.display === 'none') return requestAnimationFrame(animate);
+        
+        requestAnimationFrame(animate);
+        let moveDir = new THREE.Vector3();
+        if (keys['KeyW']) moveDir.z += 1;
+        if (keys['KeyS']) moveDir.z -= 1;
+        if (keys['KeyA']) moveDir.x += 1;
+        if (keys['KeyD']) moveDir.x -= 1;
+
+        if (moveDir.length() > 0) {
+            moveDir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+            player.position.addScaledVector(moveDir, 0.2);
+            player.rotation.y = Math.atan2(moveDir.x, moveDir.z);
+            const time = Date.now() * 0.01;
+            legL.rotation.x = Math.sin(time) * 0.6; legR.rotation.x = Math.cos(time) * 0.6;
+            armL.rotation.x = Math.cos(time) * 0.6; armR.rotation.x = Math.sin(time) * 0.6;
+        }
+
+        velY -= 0.012;
+        player.position.y += velY;
+
+        let grounded = false;
+        let pBox = new THREE.Box3().setFromObject(player);
+        platforms.forEach(p => {
+            let b = new THREE.Box3().setFromObject(p.mesh);
+            if(b.intersectsBox(pBox) && velY <= 0 && player.position.y > p.mesh.position.y) {
+                player.position.y = p.mesh.position.y + 1.8;
+                velY = 0; grounded = true;
+                if(p.check && p.levelNum > currentLevel) {
+                    currentLevel = p.levelNum;
+                    checkpointPos.copy(p.mesh.position).add(new THREE.Vector3(0, 5, 0));
+                    document.getElementById('stageNum').innerText = currentLevel;
+                }
+            }
+        });
+        lava.forEach(l => { if(new THREE.Box3().setFromObject(l).intersectsBox(pBox)) reset(); });
+        if(grounded && keys['Space']) velY = 0.25;
+        if(player.position.y < -15) reset();
+
+        function reset() { player.position.copy(checkpointPos); velY = 0; }
+
+        camera.position.x = player.position.x - Math.sin(yaw) * 12;
+        camera.position.z = player.position.z - Math.cos(yaw) * 12;
+        camera.position.y = player.position.y + 6;
+        camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
+
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
