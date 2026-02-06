@@ -2,194 +2,321 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Global Education Resource | Study Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Portal | Central Learning System</title>
     <style>
-        /* --- STEALTH CSS: THE "STUDY" LOOK --- */
-        body { margin: 0; font-family: 'Times New Roman', serif; background: #f4f4f4; color: #333; overflow-x: hidden; }
-        #study-site { padding: 40px; max-width: 800px; margin: auto; background: white; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; border-bottom: 2px solid #2c3e50; font-size: 2.5em; }
-        .section { margin-bottom: 30px; line-height: 1.6; }
-        .secret-link { color: inherit; text-decoration: none; cursor: text; border-bottom: 1px transparent; }
+        :root { --accent: #2c3e50; }
+        body { margin: 0; font-family: 'Times New Roman', serif; background: #f0f2f5; color: #1a1a1a; overflow: hidden; }
+        header { background: white; border-bottom: 1px solid #ccc; padding: 15px 10%; display: flex; justify-content: space-between; align-items: center; }
+        nav span { margin: 0 15px; cursor: pointer; color: #555; font-size: 0.95rem; padding-bottom: 5px; transition: 0.2s; }
+        nav span:hover { color: #000; }
+        .active-tab { font-weight: bold; color: #000; border-bottom: 2px solid #000; }
+        #main-container { max-width: 800px; margin: 40px auto; background: white; padding: 40px; min-height: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; }
+        h1 { font-size: 1.8rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        p { line-height: 1.7; text-align: justify; }
+        .page-footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px; }
+        .nav-btn { background: #f8f8f8; border: 1px solid #ccc; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+        .nav-btn:hover { background: #eee; }
+        .stealth-trigger { color: inherit; text-decoration: none; cursor: text; }
         
-        /* --- GAME CSS: THE "OBBY" LOOK --- */
-        #game-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #87CEEB; z-index: 9999; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 10000; font-family: 'Segoe UI', sans-serif; }
-        #fullscreen-btn { 
-            position: absolute; bottom: 20px; right: 20px; 
-            padding: 10px 20px; background: rgba(0,0,0,0.6); color: white; 
-            border: 2px solid white; border-radius: 5px; cursor: pointer; pointer-events: auto; z-index: 10001;
-        }
+        #game-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 5px #000; font-family: sans-serif; pointer-events: none; z-index: 10001; }
+        #passcode-box { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 2px solid #000; z-index: 10006; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); font-family: sans-serif; }
+        #passcode-box input { padding: 10px; width: 200px; border: 1px solid #ccc; font-family: monospace; }
+        #victory-screen { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px; border: 5px solid gold; border-radius: 20px; text-align: center; z-index: 10005; box-shadow: 0 0 50px rgba(0,0,0,0.3); }
+        #secret-roll { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 20000; flex-direction: column; align-items: center; justify-content: center; color: #ff00ff; font-family: 'Courier New', Courier, monospace; }
+        #rick-canvas { background: #111; border: 4px solid #ff00ff; }
     </style>
 </head>
 <body>
 
-<div id="study-site">
-    <h1>Advanced Calculus & Linear Algebra</h1>
-    <div class="section">
-        <h3>1.1 Understanding Limits</h3>
-        <p>In mathematics, a limit is the value that a function "approaches" as the input approaches some value. Limits are essential to calculus and mathematical analysis, and are used to define continuity, derivatives, and integrals.</p>
-    </div>
+<div id="secret-roll">
+    <canvas id="rick-canvas" width="400" height="300"></canvas>
+    <h1 id="secret-heading" style="border:none">NEVER GONNA GIVE YOU UP</h1>
+    <p style="color:white">You found the secret! Press ESC to return.</p>
+</div>
 
-    <div class="section">
-        <h3>1.2 Fundamental <a href="#" class="secret-link" onclick="unlockObby(event)">Equations</a></h3>
-        <p>The concept of the derivative is at the core of Calculus. When we look at various complex algebraic structures, we must maintain the integrity of the variables involved in the process.</p>
+<div id="passcode-box">
+    <h3>SECURE TERMINAL</h3>
+    <p>ENTER PASSCODE:</p>
+    <input type="password" id="pass-input" placeholder="...">
+    <br><br>
+    <button onclick="checkPass()">SUBMIT</button>
+    <button onclick="this.parentElement.style.display='none'; document.body.requestPointerLock()">CLOSE</button>
+</div>
+
+<header id="site-header">
+    <div style="font-weight: bold; letter-spacing: 1px;">UNIVERSITY HUB</div>
+    <nav>
+        <span id="tab-ss" onclick="switchSubject('ss')">Social Studies</span>
+        <span id="tab-english" onclick="switchSubject('english')">English</span>
+        <span id="tab-biology" onclick="switchSubject('biology')">Biology</span>
+        <span id="tab-algebra" onclick="switchSubject('algebra')">Algebra</span>
+    </nav>
+</header>
+
+<div id="main-container">
+    <div id="content-body"></div>
+    <div class="page-footer">
+        <button class="nav-btn" onclick="prevPage()">PREVIOUS</button>
+        <span id="page-num">Page 1 of 6</span>
+        <button class="nav-btn" onclick="nextPage()">NEXT</button>
     </div>
-    <p style="color: #999; font-size: 0.8em;">&copy; 2026 Global Edu-Tech Systems. Internal Use Only.</p>
 </div>
 
 <div id="game-container">
     <div id="ui">
-        <div style="font-size: 28px; font-weight: bold;">Stage: <span id="stageNum">1</span> / 30</div>
-        <div>WASD: Move | SPACE: Jump | MOUSE: Rotate View | ESC: Panic Key</div>
+        <div style="font-size: 20px; font-weight: bold;">UNIT 4: AVIAN SYSTEMS</div>
+        <div id="stage-ui">Stage: 1</div>
+        <div id="corn-ui">Corn Collected: 0</div>
+        <div style="font-size: 12px; font-weight: normal;">Press ESC to return to Portal</div>
     </div>
-    <button id="fullscreen-btn">FULL SCREEN</button>
+    <div id="victory-screen">
+        <h1 style="color: gold; border: none;">🏆 RESEARCH COMPLETE</h1>
+        <p id="final-score" style="text-align: center;">Chickens are highly advanced!</p>
+        <button onclick="location.reload()" style="padding: 10px 20px; cursor: pointer;">SUBMIT DATA</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 <script>
-    let scene, camera, renderer, player, legL, legR, armL, armR;
-    const platforms = [], lava = [], keys = {};
-    let velY = 0, yaw = 0, currentLevel = 1;
-    let checkpointPos = new THREE.Vector3(0, 5, 0);
+    const curriculum = {
+        ss: ["<h1>Social Studies: Local Governance</h1><p>Communities are organized through local councils that manage public spaces.</p>","<h1>Social Studies: Cultural Heritage</h1><p>Traditions are passed down through storytelling across generations.</p>","<h1>Social Studies: Global Economy</h1><p>Trade allows different countries to exchange resources.</p>","<h1>Social Studies: Environmental Stewardship</h1><p>Sustainable practices help protect natural resources.</p>","<h1>Social Studies: Urban Planning</h1><p>Planners design cities to be efficient, balancing transit and housing.</p>","<h1>Social Studies: Historical Records</h1><p>Historians use artifacts to piece together the past.</p>"],
+        english: ["<h1>English: Literary Devices</h1><p>Metaphors and similes add color to writing.</p>","<h1>English: The Art of Persuasion</h1><p>Effective arguments use logic and evidence.</p>","<h1>English: Narrative Arc</h1><p>Most stories follow a structure: introduction, climax, and resolution.</p>","<h1>English: Grammar and Clarity</h1><p>Proper punctuation acts like traffic signs for the reader.</p>","<h1>English: Character Development</h1><p>Great writers create characters with flaws and strengths.</p>","<h1>English: Poetry and Rhythm</h1><p>Poetry uses meter and rhyme to create a musical quality.</p>"],
+        biology: ["<h1>Biology: Cellular Structure</h1><p>Cells are the building blocks of life.</p>","<h1>Biology: Ecosystems</h1><p>A biological community consists of interacting organisms.</p>","<h1>Biology: Photosynthesis</h1><p>Plants convert sunlight into chemical energy.</p>","<h1>Biology: Genetics</h1><p>DNA contains the instructions for every living thing.</p>","<h1>Biology: Adaptation</h1><p>Species change over time to survive.</p>","<h1>Biology: Avian Tech</h1><p>New research suggests <a href='#' class='stealth-trigger' onclick='unlockGame(event)'>chickens are ai</a>-capable.</p>"],
+        algebra: ["<h1>Algebra: Solving for X</h1><p>Algebra uses variables to represent unknown values.</p>","<h1>Algebra: Linear Equations</h1><p>The relationship between variables can be graphed as a line.</p>","<h1>Algebra: Order of Operations</h1><p>Mathematics follows strict rules like PEMDAS.</p>","<h1>Algebra: Factoring</h1><p>Breaking down expressions helps understand the core problem.</p>","<h1>Algebra: Inequalities</h1><p>Knowing 'greater than' or 'less than' is vital.</p>","<h1>Algebra: Functions</h1><p>A function takes an input and provides a specific output.</p>"]
+    };
 
-    function unlockObby(e) {
-        e.preventDefault();
-        document.getElementById('study-site').style.display = 'none';
-        document.getElementById('game-container').style.display = 'block';
-        initEngine();
+    let curSub = 'ss', curPg = 0;
+    function switchSubject(s) { curSub = s; curPg = 0; renderPortal(); }
+    function nextPage() { if(curPg < 5) { curPg++; renderPortal(); } }
+    function prevPage() { if(curPg > 0) { curPg--; renderPortal(); } }
+    function renderPortal() {
+        document.getElementById('content-body').innerHTML = curriculum[curSub][curPg];
+        document.getElementById('page-num').innerText = `Page ${curPg + 1} of 6`;
+        document.querySelectorAll('nav span').forEach(el => el.classList.remove('active-tab'));
+        document.getElementById('tab-' + curSub).classList.add('active-tab');
+    }
+    renderPortal();
+
+    function checkPass() {
+        const val = document.getElementById('pass-input').value;
+        if(val === 'hithisasecret') startRickRoll(false);
+        else if(val === '123') startRickRoll(true);
+        else alert('INVALID DATA');
     }
 
-    // --- PANIC KEY: Press 'Escape' to hide instantly ---
-    window.addEventListener('keydown', e => {
+    function startRickRoll(isChicken) {
+        document.getElementById('passcode-box').style.display='none';
+        document.getElementById('secret-roll').style.display = 'flex';
+        document.getElementById('secret-heading').innerText = isChicken ? "NEVER GONNA QUACK YOU UP" : "NEVER GONNA GIVE YOU UP";
+        const canvas = document.getElementById('rick-canvas');
+        const ctx = canvas.getContext('2d');
+        let frame = 0;
+        function draw() {
+            if (document.getElementById('secret-roll').style.display === 'none') return;
+            ctx.fillStyle = '#111'; ctx.fillRect(0,0,400,300);
+            let bounce = Math.sin(frame * 0.1) * 10;
+            let dance = Math.sin(frame * 0.2) * 20;
+            if(isChicken) {
+                ctx.fillStyle = '#ffeb3b'; ctx.fillRect(160, 120 + bounce, 80, 70);
+                ctx.fillRect(180, 80 + bounce, 40, 40);
+                ctx.fillStyle = '#ff9800'; ctx.fillRect(215, 100 + bounce, 15, 10);
+                ctx.fillStyle = '#f44336'; ctx.fillRect(190, 70 + bounce, 20, 15);
+                ctx.fillStyle = '#ffeb3b'; ctx.fillRect(130, 130 + dance, 30, 40); ctx.fillRect(240, 130 - dance, 30, 40);
+            } else {
+                ctx.fillStyle = '#f0d0b0'; ctx.fillRect(170, 80 + bounce, 60, 60);
+                ctx.fillStyle = '#402010'; ctx.fillRect(170, 70 + bounce, 60, 20);
+                ctx.fillStyle = '#2222ff'; ctx.fillRect(150, 140 + bounce, 100, 100);
+                ctx.fillStyle = '#f0d0b0'; ctx.fillRect(120, 150 + dance, 30, 30); ctx.fillRect(250, 150 - dance, 30, 30);
+            }
+            frame++; requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+    let scene, camera, renderer, chicken, raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+    let wings = [], sunLight, sunOrb, windmillBlades;
+    let platforms = [], hazards = [], corns = [], eggs = [], keys = {}, yaw = 0, pitch = 0, velY = 0, checkpoint = new THREE.Vector3(0,5,0);
+    let score = 0, gameWon = false, isGrounded = false, totalZProgress = 30 * 85;
+
+    function unlockGame(e) {
+        e.preventDefault();
+        document.getElementById('game-container').style.display = 'block';
+        if(!renderer) initGame();
+    }
+
+    window.addEventListener('keydown', e => { 
+        if(e.code === 'Space' && isGrounded) { velY = 0.45; isGrounded = false; spawnEgg(); }
         if(e.key === 'Escape') {
             document.getElementById('game-container').style.display = 'none';
-            document.getElementById('study-site').style.display = 'block';
+            document.getElementById('secret-roll').style.display = 'none';
             document.exitPointerLock();
         }
+        keys[e.code] = true; 
     });
+    window.addEventListener('keyup', e => keys[e.code] = false);
 
-    function initEngine() {
-        if (renderer) return; // Prevent double init
+    function spawnEgg() {
+        const egg = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshStandardMaterial({color: 0xffffff}));
+        egg.position.copy(chicken.position); egg.life = 1.0; scene.add(egg); eggs.push(egg);
+    }
 
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 20, 150);
-
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+    function initGame() {
+        scene = new THREE.Scene(); 
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 4000);
+        renderer = new THREE.WebGLRenderer({canvas: document.getElementById('gameCanvas'), antialias: true});
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        document.getElementById('game-container').appendChild(renderer.domElement);
-
-        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(50, 100, 50);
-        sun.castShadow = true;
-        scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
-
-        // Create Player
-        player = new THREE.Group();
-        const matShirt = new THREE.MeshStandardMaterial({ color: 0x00a2ff });
-        const matSkin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-        const matPants = new THREE.MeshStandardMaterial({ color: 0x333333 });
-
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), matSkin);
-        head.position.y = 1.3;
-        const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.5), matShirt);
-        torso.position.y = 0.4;
-        armL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), matSkin);
-        armL.position.set(-0.7, 0.4, 0);
-        armR = armL.clone(); armR.position.x = 0.7;
-        legL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.2, 0.45), matPants);
-        legL.position.set(-0.25, -0.8, 0);
-        legR = legL.clone(); legR.position.x = 0.25;
-
-        player.add(head, torso, armL, armR, legL, legR);
-        player.position.set(0, 5, 0);
-        scene.add(player);
-
-        // Generate 30 Levels
-        for (let i = 0; i < 30; i++) {
-            let z = i * 40;
-            addProp(0, 0, z, 10, 0.8, 10, 0x22ff22, false, true, i+1); // Checkpoint
-            for(let j=1; j<=4; j++) {
-                let oz = z + (j * 8);
-                let type = i % 3;
-                if(type==0) addProp(Math.sin(j)*3, j*0.5, oz, 4, 0.5, 4, 0xffffff);
-                if(type==1) { addProp(0,0,oz,12,0.5,2,0xff0000,true); addProp(0,-0.2,oz,1,0.5,8,0x888888); }
-                if(type==2) addProp(0, j, oz, 3, 0.5, 3, 0xdddddd);
-            }
-        }
-
-        // Setup Events
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
-        window.addEventListener('mousemove', e => {
-            if(document.pointerLockElement) yaw -= e.movementX * 0.003;
-        });
-        renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
-        document.getElementById('fullscreen-btn').addEventListener('click', () => {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
-        });
-
-        animate();
-    }
-
-    function addProp(x, y, z, w, h, d, color, kill=false, check=false, levelNum=0) {
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({color}));
-        mesh.position.set(x, y, z);
-        mesh.castShadow = mesh.receiveShadow = true;
-        scene.add(mesh);
-        if(kill) lava.push(mesh); else platforms.push({mesh, check, levelNum});
-    }
-
-    function animate() {
-        if(document.getElementById('game-container').style.display === 'none') return requestAnimationFrame(animate);
         
-        requestAnimationFrame(animate);
-        let moveDir = new THREE.Vector3();
-        if (keys['KeyW']) moveDir.z += 1;
-        if (keys['KeyS']) moveDir.z -= 1;
-        if (keys['KeyA']) moveDir.x += 1;
-        if (keys['KeyD']) moveDir.x -= 1;
+        const ambient = new THREE.AmbientLight(0xffffff, 0.2); scene.add(ambient);
+        sunLight = new THREE.DirectionalLight(0xffffff, 1.0); sunLight.position.set(200, 400, 50); scene.add(sunLight);
+        sunOrb = new THREE.Mesh(new THREE.SphereGeometry(30, 32, 32), new THREE.MeshBasicMaterial({color: 0xffff00}));
+        scene.add(sunOrb);
 
-        if (moveDir.length() > 0) {
-            moveDir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
-            player.position.addScaledVector(moveDir, 0.2);
-            player.rotation.y = Math.atan2(moveDir.x, moveDir.z);
-            const time = Date.now() * 0.01;
-            legL.rotation.x = Math.sin(time) * 0.6; legR.rotation.x = Math.cos(time) * 0.6;
-            armL.rotation.x = Math.cos(time) * 0.6; armR.rotation.x = Math.sin(time) * 0.6;
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(15000, 15000), new THREE.MeshStandardMaterial({color: 0x0a1a05}));
+        floor.rotation.x = -Math.PI / 2; floor.position.y = -20; scene.add(floor);
+
+        chicken = new THREE.Group();
+        const yellow = new THREE.MeshStandardMaterial({color: 0xffeb3b});
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.9), yellow);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), yellow); head.position.set(0, 0.5, 0.4);
+        chicken.add(body, head);
+        const wL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.6), yellow); wL.position.set(-0.45, 0, 0); wings.push(wL);
+        const wR = wL.clone(); wR.position.x = 0.45; wings.push(wR);
+        chicken.add(wL, wR); scene.add(chicken);
+
+        for(let i=0; i<30; i++) {
+            const z = i * 85;
+            const difficulty = i / 30;
+            const col = new THREE.Color().setHSL(0.35, 0.4, 0.5 - (difficulty * 0.3));
+            addBox(0, 0, z, 15, 1, 15, col, false, true, "Stage " + (i+1));
+            if(i < 29) {
+                const layoutType = i % 5;
+                switch(layoutType) {
+                    case 0: // The Spiral Ascent
+                        for(let k=0; k<5; k++) {
+                            addBox(Math.sin(k) * 5, k * 1.8, z + 15 + (k * 12), 5, 0.5, 5, col);
+                        }
+                        break;
+                    case 1: // The Offset Balance Beams
+                        addBox(-4, 1.5, z + 20, 3, 0.5, 25, col);
+                        addBox(4, 3.5, z + 45, 3, 0.5, 25, col);
+                        addBox(0, 5.5, z + 70, 4, 0.5, 10, col);
+                        break;
+                    case 2: // The Leap of Faith Pillars
+                        addBox(-6, 2, z + 20, 3, 10, 3, col);
+                        addBox(0, 5, z + 40, 3, 15, 3, col);
+                        addBox(6, 8, z + 60, 3, 20, 3, col);
+                        break;
+                    case 3: // The Jagged Zig-Zag
+                        for(let k=0; k<6; k++) {
+                            let xPos = (k % 2 === 0) ? -5 : 5;
+                            addBox(xPos, k * 1.2, z + 10 + (k * 12), 6, 0.5, 6, col);
+                        }
+                        break;
+                    case 4: // The Twin High-Roads
+                        addBox(-5, 4, z + 40, 1.5, 0.5, 50, 0x4444ff); 
+                        addBox(5, 4, z + 40, 1.5, 0.5, 50, 0xff4444);  
+                        addBox(0, 1, z + 40, 4, 0.5, 4, col); 
+                        break;
+                }
+                const corn = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.6), new THREE.MeshStandardMaterial({color: 0xFFFF00}));
+                corn.position.set((Math.random()-0.5)*5, 3, z+40); scene.add(corn); corns.push(corn);
+            } else {
+                const mill = new THREE.Group();
+                mill.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1.5, 30), new THREE.MeshStandardMaterial({color: 0x333333})));
+                windmillBlades = new THREE.Group();
+                for(let b=0; b<4; b++) {
+                    const bl = new THREE.Mesh(new THREE.BoxGeometry(15, 2, 0.2), new THREE.MeshStandardMaterial({color: 0xffffff}));
+                    bl.rotation.z = (Math.PI/2)*b; bl.position.x = 7.5; windmillBlades.add(bl);
+                }
+                windmillBlades.position.y = 15; mill.add(windmillBlades);
+                mill.position.set(0, 15, z + 25); scene.add(mill);
+            }
+            addBox(0, -25, z+40, 500, 1, 400, 0x000000, true);
         }
 
-        velY -= 0.012;
-        player.position.y += velY;
-
-        let grounded = false;
-        let pBox = new THREE.Box3().setFromObject(player);
-        platforms.forEach(p => {
-            let b = new THREE.Box3().setFromObject(p.mesh);
-            if(b.intersectsBox(pBox) && velY <= 0 && player.position.y > p.mesh.position.y) {
-                player.position.y = p.mesh.position.y + 1.8;
-                velY = 0; grounded = true;
-                if(p.check && p.levelNum > currentLevel) {
-                    currentLevel = p.levelNum;
-                    checkpointPos.copy(p.mesh.position).add(new THREE.Vector3(0, 5, 0));
-                    document.getElementById('stageNum').innerText = currentLevel;
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            if(document.getElementById('game-container').style.display === 'block') {
+                if(!document.pointerLockElement) renderer.domElement.requestPointerLock();
+                else {
+                    mouse.x = 0; mouse.y = 0; raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObject(chicken, true);
+                    if(intersects.length > 0) { document.exitPointerLock(); document.getElementById('passcode-box').style.display = 'block'; }
                 }
             }
         });
-        lava.forEach(l => { if(new THREE.Box3().setFromObject(l).intersectsBox(pBox)) reset(); });
-        if(grounded && keys['Space']) velY = 0.25;
-        if(player.position.y < -15) reset();
+        animate();
+    }
 
-        function reset() { player.position.copy(checkpointPos); velY = 0; }
+    function addBox(x,y,z,w,h,d,col,kill=false,check=false,text="") {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color: col}));
+        m.position.set(x,y,z); scene.add(m);
+        if(kill) hazards.push(m); else platforms.push({m, check, text});
+    }
 
-        camera.position.x = player.position.x - Math.sin(yaw) * 12;
-        camera.position.z = player.position.z - Math.cos(yaw) * 12;
-        camera.position.y = player.position.y + 6;
-        camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
+    function updateDayCycle() {
+        let progress = Math.min(1, Math.max(0, chicken.position.z / totalZProgress));
+        let skyColor, sunColor, intensity;
+        if (progress < 0.5) { 
+            let t = progress * 2;
+            skyColor = new THREE.Color(0xffa07a).lerp(new THREE.Color(0x87ceeb), t);
+            sunColor = new THREE.Color(0xffd700);
+            intensity = 0.4 + (t * 0.8);
+        } else {
+            let t = (progress - 0.5) * 2;
+            skyColor = new THREE.Color(0x87ceeb).lerp(new THREE.Color(0x2c003e), t);
+            sunColor = new THREE.Color(0xffd700).lerp(new THREE.Color(0xff4500), t);
+            intensity = 1.2 - (t * 1.0);
+        }
+        scene.background = skyColor;
+        sunOrb.material.color = sunColor;
+        sunOrb.position.set(800 * Math.cos(progress * Math.PI), 400 * Math.sin(progress * Math.PI), chicken.position.z + 1000);
+        sunLight.intensity = intensity;
+        sunLight.color = sunColor;
+    }
 
+    function animate() {
+        if(gameWon) return;
+        requestAnimationFrame(animate);
+        if(document.getElementById('game-container').style.display === 'none') return;
+        updateDayCycle();
+        let move = new THREE.Vector3();
+        if(keys['KeyW']) move.z += 1; if(keys['KeyS']) move.z -= 1;
+        if(keys['KeyA']) move.x += 1; if(keys['KeyD']) move.x -= 1;
+        if(move.length() > 0 && document.pointerLockElement) {
+            move.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+            chicken.position.addScaledVector(move, 0.45);
+            chicken.rotation.y = Math.atan2(move.x, move.z);
+            wings.forEach((w,i) => w.rotation.z = Math.sin(Date.now()*0.015) * (i===0?1:-1));
+        }
+        velY -= 0.015; chicken.position.y += velY;
+        let cBox = new THREE.Box3().setFromObject(chicken).expandByScalar(0.3);
+        isGrounded = false;
+        platforms.forEach(p => {
+            let b = new THREE.Box3().setFromObject(p.m);
+            if(b.intersectsBox(cBox) && velY <= 0 && chicken.position.y >= p.m.position.y + 0.1) {
+                chicken.position.y = p.m.position.y + 0.9; velY = 0; isGrounded = true;
+                if(p.check && p.text !== "") { 
+                    checkpoint.set(p.m.position.x, p.m.position.y + 2, p.m.position.z);
+                    document.getElementById('stage-ui').innerText = p.text; 
+                    if(p.text.includes("30")) { gameWon = true; document.getElementById('victory-screen').style.display = 'block'; document.exitPointerLock(); }
+                }
+            }
+        });
+        if(windmillBlades) windmillBlades.rotation.z += 0.05;
+        for(let i=eggs.length-1; i>=0; i--) {
+            eggs[i].life -= 0.015; eggs[i].scale.setScalar(eggs[i].life);
+            if(eggs[i].life <= 0) { scene.remove(eggs[i]); eggs.splice(i,1); }
+        }
+        corns.forEach(c => { if(c.visible && c.position.distanceTo(chicken.position) < 2.5) { c.visible = false; score++; document.getElementById('corn-ui').innerText = "Corn: " + score; } c.rotation.y += 0.05; });
+        hazards.forEach(h => { if(new THREE.Box3().setFromObject(h).intersectsBox(cBox)) reset(); });
+        if(chicken.position.y < -50) reset();
+        function reset() { chicken.position.copy(checkpoint); velY = 0; }
+        camera.position.set(chicken.position.x - Math.sin(yaw)*Math.cos(pitch)*15, chicken.position.y + Math.sin(pitch)*15 + 8, chicken.position.z - Math.cos(yaw)*Math.cos(pitch)*15);
+        camera.lookAt(chicken.position.x, chicken.position.y + 1, chicken.position.z);
+        window.onmousemove = (e) => { if(document.pointerLockElement) { yaw -= e.movementX * 0.003; pitch = Math.max(-0.6, Math.min(0.6, pitch + e.movementY * 0.003)); } };
         renderer.render(scene, camera);
     }
 </script>
